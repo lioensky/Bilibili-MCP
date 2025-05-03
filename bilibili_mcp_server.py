@@ -195,7 +195,7 @@ def get_subtitle_json_string(bvid: str, user_cookie: str | None) -> str:
 mcp = FastMCP(SERVER_NAME) # Initialize FastMCP
 
 @mcp.tool(
-    name="get_bilibili",
+    name="get_bilibili_subtitle",
     description="Fetches subtitle JSON data for a given Bilibili video URL or BV ID. Uses Bilibili WBI API. Requires the BILIBILI_COOKIE environment variable to be set for some videos." # Updated description
     # FastMCP uses type hints below to generate the schema automatically
 )
