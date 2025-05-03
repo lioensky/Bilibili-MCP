@@ -216,12 +216,31 @@ async def get_bilibili_subtitle_tool(video_input: str) -> dict: # Removed cookie
     try:
         # Call the existing helper function
         subtitle_json_string = get_subtitle_json_string(bvid, user_cookie)
-        # Return data matching the output schema
-        return {"content": [{"type": "text", "text": subtitle_json_string}]}
+
+        # Process the subtitle JSON string to extract plain text
+        try:
+            subtitle_data = json.loads(subtitle_json_string)
+            if isinstance(subtitle_data, dict) and 'body' in subtitle_data and isinstance(subtitle_data['body'], list):
+                lines = [item.get('content', '') for item in subtitle_data['body'] if isinstance(item, dict)]
+                processed_text = "\n".join(lines).strip()
+                logging.info(f"Successfully processed subtitle text for BVID {bvid}. Length: {len(processed_text)}")
+            else:
+                logging.warning(f"Subtitle JSON for BVID {bvid} has unexpected structure or is missing 'body'. Raw: {subtitle_json_string[:100]}...")
+                processed_text = "" # Return empty string if structure is wrong
+        except json.JSONDecodeError:
+            logging.error(f"Failed to decode subtitle JSON for BVID {bvid}. Raw: {subtitle_json_string[:100]}...")
+            processed_text = "" # Return empty string on decode error
+        except Exception as parse_e:
+             logging.exception(f"Unexpected error processing subtitle JSON for BVID {bvid}: {parse_e}")
+             processed_text = "" # Return empty string on other processing errors
+
+
+        # Return processed plain text data matching the output schema
+        return {"content": [{"type": "text", "text": processed_text}]}
     except Exception as e:
-        logging.exception(f"Error calling get_subtitle_json_string for BVID {bvid}: {e}")
-        # Return structure matching output_schema on error
-        return {"content": [{"type": "text", "text": json.dumps({"body":[]})}]}
+        logging.exception(f"Error in get_bilibili_subtitle_tool for BVID {bvid}: {e}")
+        # Return structure matching output_schema on error, with empty text
+        return {"content": [{"type": "text", "text": ""}]}
 
 def main():
     """Runs the FastMCP server."""
